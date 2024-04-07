@@ -1,34 +1,36 @@
-# <YOUR_IMPORTS>
-import datetime
-import json
+import glob
 import os
+from datetime import datetime
 
 import dill
-
 import pandas as pd
+import json
 
-
+path = os.environ.get('PROJECT_PATH', '..')
 def predict():
-    path = os.environ.get('PROJECT_PATH', '.') # Путь к файлу
-    mod = sorted(os.listdir(f'{path}/data/models'))
-    with open(f'{path}/data/models/cars_pipe_202404042340.pkl', 'rb') as file:
+
+    # Определяем последнюю модель
+    latest_model = sorted(os.listdir(f'{path}/data/models'))[-1]
+    # Загружаем обученную модель
+    with open(f'{path}/data/models/{latest_model}', 'rb') as file:
         model = dill.load(file)
 
-    df_pred = pd.DataFrame(columns=['id', 'pred'])
-    files_list = os.listdir(f'{path}/data/test')
+    preds = pd.DataFrame(columns=['car_id', 'pred'])
 
-    for filename in files_list:
-        with open(f'{path}/data/test/{filename}') as file:
-            form = json.load(file)
-        data = pd.DataFrame.from_dict([form])
-        prediction = model.predict(data)
-        dict_pred = {'id': data.id, 'pred': prediction}
-        df = pd.DataFrame(dict_pred)
-        df_pred = pd.concat([df, df_pred], axis=0)
-        df = df_pred
-    df.to_csv(f'{path}/data/predictions/{datetime.datetime.now().strftime("%Y%m%d%H%M")}.csv',
-              index=False)
+    for file in glob.glob(f'{path}/data/test/*.json'):
+        with open(file) as fin:
+            form = json.load(fin)
+            df = pd.DataFrame.from_dict([form])
+            y = model.predict(df)
+            x = {'car_id': df.id, 'pred': y}
+            df1 = pd.DataFrame(x)
+            preds = pd.concat([preds, df1], axis = 0)
+    print(preds)
+
+    preds.to_csv(f'{path}/data/predictions/preds_{datetime.now().strftime("%Y%m%d%H%M")}.csv', index = False)
+
 
 
 if __name__ == '__main__':
     predict()
+
