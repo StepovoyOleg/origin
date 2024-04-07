@@ -23,7 +23,7 @@ from modules.predict import predict
 
 args = {
     'owner': 'airflow',
-    'start_date': dt.datetime.now(),
+    'start_date': dt.datetime(2024, 4, 1),
     'retries': 1,
     'retry_delay': dt.timedelta(minutes=1),
     'depends_on_past': False,
@@ -32,10 +32,9 @@ args = {
 with DAG(
         dag_id='car_price_prediction',
         schedule="00 15 * * *",
-        start_date=dt.datetime(2022, 6, 10)
+        default_args=args,
 ) as dag:
 
-    first_task=BashOperator(task_id='first_task',bash_command='echo"Here we start!"',dag=dag)
 
     pipeline = PythonOperator(
         task_id='pipeline',
